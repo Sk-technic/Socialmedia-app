@@ -1,6 +1,6 @@
+
 import mongoose from "mongoose";
-import { cache } from "react";
-import { buffer } from "stream/consumers";
+
 
 const MONGODB_URI = process.env.MONGODB_URI!; // ! is for chek the connection string is always here
 
@@ -16,12 +16,13 @@ if (!cached) {
     cached = global.mongoose = {conn: null, promise: null};
 }
 
-export async function connecttodb(){
-
+export async function ConnectToDB(){
     if (cached.conn) {
-        return cached.conn
+        console.log("✅ Using cached database connection");
+        return cached.conn;
     }
-    //if connection is not 
+
+    //if connection promise is not 
     if(!cached.promise){
         const opts = {
             bufferCommands: true,
@@ -29,9 +30,17 @@ export async function connecttodb(){
         }
         
         cached.promise = mongoose.connect(MONGODB_URI, opts)
-        .then(()=> mongoose.connection);
+        .then(() => {
+            console.log("✅ Database connected successfully");
+            return mongoose.connection;
+        }).catch((err) => {
+            console.error("❌ Database connection failed:", err);
+            cached.promise = null;
+            throw new Error("Database connection error");
+        });
+    
     }
-
+    
     try{
         cached.conn = await cached.promise
     } catch (error) {
